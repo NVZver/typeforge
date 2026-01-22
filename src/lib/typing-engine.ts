@@ -3,7 +3,8 @@ import { CharTiming, TypingStats } from './types';
 export class TypingEngine {
   private text: string = '';
   private currentIndex: number = 0;
-  private totalErrors: number = 0;
+  private totalKeystrokes: number = 0;  // All characters typed (not decremented on delete)
+  private totalErrors: number = 0;       // All errors made (not decremented on delete)
   private startTime: number | null = null;
   private endTime: number | null = null;
   private keyTimes: Record<string, number[]> = {};
@@ -16,6 +17,7 @@ export class TypingEngine {
   reset(): void {
     this.text = '';
     this.currentIndex = 0;
+    this.totalKeystrokes = 0;
     this.totalErrors = 0;
     this.startTime = null;
     this.endTime = null;
@@ -75,13 +77,15 @@ export class TypingEngine {
       this.bigramTimes[bigram].push(elapsed);
     }
 
-    if (correct) {
-      this.currentIndex++;
-      this.lastChar = expectedChar;
-    } else {
+    // Track all keystrokes and errors (never decremented, even on delete)
+    this.totalKeystrokes++;
+    if (!correct) {
       this.totalErrors++;
     }
 
+    // Always advance cursor - user can backspace to fix mistakes
+    this.currentIndex++;
+    this.lastChar = expectedChar;
     this.lastKeyTime = now;
 
     // Check completion
@@ -94,7 +98,7 @@ export class TypingEngine {
       correct,
       complete: this.isComplete,
       expectedChar,
-      index: this.currentIndex - (correct ? 1 : 0)
+      index: this.currentIndex - 1
     };
   }
 
@@ -102,12 +106,15 @@ export class TypingEngine {
     const now = this.endTime || performance.now();
     const elapsedMinutes = (now - (this.startTime || now)) / 60000;
 
-    // WPM: (characters / 5) / minutes
+    // WPM: (text progress / 5) / total minutes
+    // Measures how fast you complete the text, including all errors and fixes
     const wpm = elapsedMinutes > 0 ? Math.round((this.currentIndex / 5) / elapsedMinutes) : 0;
 
-    // Accuracy: (correctChars / totalAttempts) * 100
-    const totalAttempts = this.currentIndex + this.totalErrors;
-    const accuracy = totalAttempts > 0 ? Math.round((this.currentIndex / totalAttempts) * 100) : 100;
+    // Accuracy: correct keystrokes / total keystrokes (errors count even if fixed)
+    const correctKeystrokes = this.totalKeystrokes - this.totalErrors;
+    const accuracy = this.totalKeystrokes > 0
+      ? Math.round((correctKeystrokes / this.totalKeystrokes) * 100)
+      : 100;
 
     return {
       wpm,
@@ -145,5 +152,56 @@ export class TypingEngine {
 
   hasStarted(): boolean {
     return this.startTime !== null;
+  }
+
+  deleteChar(): boolean {
+    if (this.currentIndex <= 0) {
+      return false;
+    }
+
+    // Allow deleting from completed state
+    if (this.isComplete) {
+      this.isComplete = false;
+      this.endTime = null;
+    }
+
+    // Save index before decrementing to remove correct timing entries
+    const indexToRemove = this.currentIndex - 1;
+    this.currentIndex--;
+
+    // Remove ALL timing entries for this index (handles error retries)
+    this.charTimings = this.charTimings.filter(t => t.index !== indexToRemove);
+
+    // Update lastChar for bigram tracking
+    if (this.currentIndex > 0) {
+      this.lastChar = this.text[this.currentIndex - 1];
+    } else {
+      this.lastChar = null;
+    }
+
+    return true;
+  }
+
+  deleteWord(): number {
+    if (this.currentIndex <= 0) {
+      return 0;
+    }
+
+    let deleted = 0;
+    const text = this.text;
+
+    // Skip any spaces at current position
+    while (this.currentIndex > 0 && text[this.currentIndex - 1] === ' ') {
+      this.deleteChar();
+      deleted++;
+    }
+
+    // Delete until we hit a space or start of text
+    while (this.currentIndex > 0 && text[this.currentIndex - 1] !== ' ') {
+      this.deleteChar();
+      deleted++;
+    }
+
+    return deleted;
   }
 }

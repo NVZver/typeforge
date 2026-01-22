@@ -5,6 +5,8 @@ import { useRef, useEffect, KeyboardEvent, ChangeEvent } from 'react';
 interface TypingInputProps {
   onInput: (char: string) => void;
   onNewText: () => void;
+  onDelete?: () => void;
+  onDeleteWord?: () => void;
   disabled?: boolean;
   hasError?: boolean;
   isComplete?: boolean;
@@ -13,6 +15,8 @@ interface TypingInputProps {
 export function TypingInput({
   onInput,
   onNewText,
+  onDelete,
+  onDeleteWord,
   disabled,
   hasError,
   isComplete
@@ -67,7 +71,15 @@ export function TypingInput({
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Backspace') {
-      e.preventDefault(); // No backspace allowed for accuracy training
+      e.preventDefault();
+      if (e.altKey || e.ctrlKey) {
+        // Option+Backspace (Mac) or Ctrl+Backspace (Windows) - delete word
+        onDeleteWord?.();
+      } else {
+        // Regular backspace - delete single character
+        onDelete?.();
+      }
+      return;
     }
     if (e.key === 'Tab') {
       e.preventDefault();

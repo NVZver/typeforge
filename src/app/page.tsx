@@ -211,6 +211,20 @@ export default function TypingPage() {
     }
   }, [connected, timeLimit, completeSession]);
 
+  const handleDelete = useCallback(() => {
+    if (engineRef.current.deleteChar()) {
+      setStats(engineRef.current.getStats());
+      setRefreshKey(k => k + 1);
+    }
+  }, []);
+
+  const handleDeleteWord = useCallback(() => {
+    if (engineRef.current.deleteWord() > 0) {
+      setStats(engineRef.current.getStats());
+      setRefreshKey(k => k + 1);
+    }
+  }, []);
+
   const handleConnectionChange = useCallback((isConnected: boolean) => {
     setConnected(isConnected);
   }, []);
@@ -298,6 +312,8 @@ export default function TypingPage() {
           <TypingInput
             onInput={processInput}
             onNewText={generateText}
+            onDelete={handleDelete}
+            onDeleteWord={handleDeleteWord}
             hasError={hasError}
             disabled={isLoading || !connected}
             isComplete={stats.complete}
