@@ -1448,3 +1448,271 @@ footer {
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* Exercise Summary */
+.exercise-summary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  padding: 30px;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.summary-title {
+  font-size: 1.5rem;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.summary-stats {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.summary-stat-card {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 24px;
+  text-align: center;
+  min-width: 100px;
+}
+
+.summary-stat-value {
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.summary-stat-value.success {
+  color: var(--success);
+}
+
+.summary-stat-value.warning {
+  color: var(--warning);
+}
+
+.summary-stat-value.error {
+  color: var(--error);
+}
+
+.summary-stat-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.summary-ai {
+  width: 100%;
+  max-width: 600px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.summary-ai h3 {
+  margin: 0 0 12px 0;
+  font-size: 1rem;
+  color: var(--accent);
+}
+
+.ai-summary-content {
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.ai-error {
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+/* Keyboard Heatmap */
+.keyboard-heatmap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 600px;
+}
+
+.keyboard-title {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.keyboard {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.keyboard-row {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+
+.keyboard-row:nth-child(2) {
+  margin-left: 20px;
+}
+
+.keyboard-row:nth-child(3) {
+  margin-left: 40px;
+}
+
+.spacebar-row {
+  margin-left: 0 !important;
+  margin-top: 4px;
+}
+
+.keyboard-key {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  transition: all 0.2s;
+}
+
+.keyboard-key.spacebar {
+  width: 200px;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.keyboard-key.no-data {
+  background: var(--bg-secondary);
+  color: var(--text-tertiary);
+  opacity: 0.5;
+}
+
+.keyboard-key.heat-0 {
+  background: rgba(46, 160, 67, 0.3);
+  border-color: rgba(46, 160, 67, 0.5);
+  color: var(--success);
+}
+
+.keyboard-key.heat-1 {
+  background: rgba(46, 160, 67, 0.15);
+  border-color: rgba(46, 160, 67, 0.3);
+}
+
+.keyboard-key.heat-2 {
+  background: rgba(227, 179, 65, 0.2);
+  border-color: rgba(227, 179, 65, 0.4);
+}
+
+.keyboard-key.heat-3 {
+  background: rgba(227, 120, 65, 0.25);
+  border-color: rgba(227, 120, 65, 0.5);
+}
+
+.keyboard-key.heat-4 {
+  background: rgba(248, 81, 73, 0.3);
+  border-color: rgba(248, 81, 73, 0.5);
+  color: var(--error);
+}
+
+.keyboard-key.weakest {
+  box-shadow: 0 0 0 2px var(--error);
+}
+
+.heatmap-legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.legend-scale {
+  display: flex;
+  gap: 2px;
+}
+
+.legend-block {
+  width: 20px;
+  height: 12px;
+  border-radius: 2px;
+}
+
+.legend-block.heat-0 {
+  background: rgba(46, 160, 67, 0.3);
+}
+
+.legend-block.heat-1 {
+  background: rgba(46, 160, 67, 0.15);
+}
+
+.legend-block.heat-2 {
+  background: rgba(227, 179, 65, 0.2);
+}
+
+.legend-block.heat-3 {
+  background: rgba(227, 120, 65, 0.25);
+}
+
+.legend-block.heat-4 {
+  background: rgba(248, 81, 73, 0.3);
+}
+
+/* Refresh Button */
+.refresh-button {
+  padding: 14px 32px;
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  color: var(--bg-primary);
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 8px;
+}
+
+.refresh-button:hover {
+  background: var(--accent-hover);
+}
+
+.refresh-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.4);
+}
+
+.refresh-hint {
+  font-size: 0.8rem;
+  color: var(--text-tertiary);
+  margin-top: 8px;
+}
+
+.refresh-hint kbd {
+  background: var(--bg-tertiary);
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  font-family: inherit;
+  font-size: 0.75rem;
+}

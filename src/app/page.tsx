@@ -3,8 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { TextDisplay } from '@/components/typing/TextDisplay';
 import { TypingInput } from '@/components/typing/TypingInput';
-import { LiveStats } from '@/components/typing/LiveStats';
-import { Timer } from '@/components/typing/Timer';
+import { ExerciseSummary } from '@/components/typing/ExerciseSummary';
 import { ConnectionStatusBanner } from '@/components/ai/ConnectionStatusBanner';
 import { ChatInterface } from '@/components/chat/ChatInterface';
 import { TypingEngine } from '@/lib/typing-engine';
@@ -269,60 +268,57 @@ export default function TypingPage() {
       )}
 
       <div className={`typing-section ${!connected ? 'disabled' : ''}`}>
-        <div className="typing-header-row">
-          <div className="practice-mode-indicator">
-            <button
-              className={`mode-badge ${trainingPlan?.practiceMode === 'words' ? 'active' : ''}`}
-              onClick={() => handleModeChange('words')}
-            >
-              Words
-            </button>
-            <button
-              className={`mode-badge ${trainingPlan?.practiceMode === 'quotes' ? 'active' : ''}`}
-              onClick={() => handleModeChange('quotes')}
-            >
-              Quotes
-            </button>
+        {!stats.complete && (
+          <div className="typing-header-row">
+            <div className="practice-mode-indicator">
+              <button
+                className={`mode-badge ${trainingPlan?.practiceMode === 'words' ? 'active' : ''}`}
+                onClick={() => handleModeChange('words')}
+              >
+                Words
+              </button>
+              <button
+                className={`mode-badge ${trainingPlan?.practiceMode === 'quotes' ? 'active' : ''}`}
+                onClick={() => handleModeChange('quotes')}
+              >
+                Quotes
+              </button>
+            </div>
           </div>
-          <LiveStats stats={stats} bestWpm={bestWpm} />
-        </div>
+        )}
 
         <div className="typing-container">
-          <div className="typing-header">
-            <div className="training-progress">
-              <span className="progress-text">
-                {sessionsUntilUpdate} session{sessionsUntilUpdate !== 1 ? 's' : ''} until new training text
-              </span>
-            </div>
-            <Timer elapsed={stats.elapsed} timeLimit={timeLimit} isRunning={isRunning} />
-          </div>
-
-          {isLoading ? (
-            <div className="text-display">
-              <span className="char upcoming">Generating AI practice text...</span>
-            </div>
-          ) : !engineRef.current.getText() ? (
-            <div className="text-display">
-              <span className="char upcoming">Connect to LM Studio to start...</span>
-            </div>
+          {stats.complete ? (
+            <ExerciseSummary
+              stats={stats}
+              keyTimes={engineRef.current.getKeyTimes()}
+              bestWpm={bestWpm}
+              onRefresh={generateText}
+            />
           ) : (
-            <TextDisplay engine={engineRef.current} refreshKey={refreshKey} />
-          )}
+            <>
+              {isLoading ? (
+                <div className="text-display">
+                  <span className="char upcoming">Generating AI practice text...</span>
+                </div>
+              ) : !engineRef.current.getText() ? (
+                <div className="text-display">
+                  <span className="char upcoming">Connect to LM Studio to start...</span>
+                </div>
+              ) : (
+                <TextDisplay engine={engineRef.current} refreshKey={refreshKey} />
+              )}
 
-          <TypingInput
-            onInput={processInput}
-            onNewText={generateText}
-            onDelete={handleDelete}
-            onDeleteWord={handleDeleteWord}
-            hasError={hasError}
-            disabled={isLoading || !connected}
-            isComplete={stats.complete}
-          />
-
-          {stats.complete && (
-            <div className="completion-hint">
-              Press <kbd>Tab</kbd> for new text
-            </div>
+              <TypingInput
+                onInput={processInput}
+                onNewText={generateText}
+                onDelete={handleDelete}
+                onDeleteWord={handleDeleteWord}
+                hasError={hasError}
+                disabled={isLoading || !connected}
+                isComplete={stats.complete}
+              />
+            </>
           )}
         </div>
       </div>

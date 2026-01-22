@@ -23,15 +23,23 @@ export function TypingInput({
 }: TypingInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // Focus when component mounts or becomes enabled
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea || disabled) return;
+
+    // Focus immediately when enabled
+    textarea.focus();
+  }, [disabled]);
+
   // Keep textarea focused at all times
   useEffect(() => {
     const textarea = textareaRef.current;
     if (!textarea) return;
 
-    textarea.focus();
-
     // Refocus when clicking anywhere on the page (except chat interface)
     const handleClick = (e: MouseEvent) => {
+      if (disabled) return;
       if ((e.target as HTMLElement).closest('.chat-interface')) {
         return; // Don't steal focus from chat input
       }
@@ -40,6 +48,7 @@ export function TypingInput({
 
     // Refocus if textarea loses focus (except when chat is focused)
     const handleBlur = () => {
+      if (disabled) return;
       setTimeout(() => {
         const activeEl = document.activeElement;
         if (activeEl?.closest('.chat-interface')) {
@@ -56,7 +65,7 @@ export function TypingInput({
       document.removeEventListener('click', handleClick);
       textarea.removeEventListener('blur', handleBlur);
     };
-  }, []);
+  }, [disabled]);
 
   const handleInput = (e: ChangeEvent<HTMLTextAreaElement>) => {
     if (disabled || isComplete) return;

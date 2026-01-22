@@ -1,6 +1,6 @@
 import { storage } from './storage';
 import { textGenerator } from './text-generator';
-import { AnalysisData, TrainingPlan } from './types';
+import { AnalysisData, TrainingPlan, TypingStats } from './types';
 
 class AICoachService {
   private endpoint: string = 'http://localhost:1234/v1';
@@ -413,6 +413,68 @@ Example format: the quick brown fox jumps over the lazy dog near the riverbank`;
       }
     } catch (error) {
       console.error('AI text generation failed:', error);
+    }
+
+    return null;
+  }
+
+  // Generate a short AI summary of a typing session
+  async generateSessionSummary(
+    stats: TypingStats,
+    keyTimes: Record<string, number[]>,
+    bestWpm: number
+  ): Promise<string | null> {
+    // Find slowest keys from this session
+    const keyAvgTimes: Array<{ key: string; avg: number }> = [];
+    for (const [key, times] of Object.entries(keyTimes)) {
+      if (times.length > 0 && /^[a-zA-Z]$/.test(key)) {
+        const avg = times.reduce((a, b) => a + b, 0) / times.length;
+        keyAvgTimes.push({ key: key.toLowerCase(), avg });
+      }
+    }
+    keyAvgTimes.sort((a, b) => b.avg - a.avg);
+    const slowestKeys = keyAvgTimes.slice(0, 3).map(k => k.key);
+    const fastestKeys = keyAvgTimes.slice(-3).map(k => k.key).reverse();
+
+    const isNewBest = stats.wpm >= bestWpm && stats.wpm > 0;
+
+    const prompt = `You are a typing coach. Give a brief (2-3 sentences) analysis of this typing session. Be encouraging but specific. Use Markdown formatting.
+
+Session results:
+- WPM: ${stats.wpm} ${isNewBest ? '(NEW PERSONAL BEST!)' : `(best: ${bestWpm})`}
+- Accuracy: ${stats.accuracy}%
+- Errors: ${stats.errors}
+- Time: ${stats.elapsed}s
+- Slowest keys: ${slowestKeys.join(', ') || 'N/A'}
+- Fastest keys: ${fastestKeys.join(', ') || 'N/A'}
+
+Keep it short and actionable. Focus on one specific thing to improve.`;
+
+    try {
+      const response = await fetch(`${this.endpoint}/chat/completions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.7,
+          max_tokens: 150,
+          stream: false
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const content = data.choices?.[0]?.message?.content?.trim();
+
+      if (content) {
+        this.isConnected = true;
+        return content;
+      }
+    } catch (error) {
+      console.error('AI summary generation failed:', error);
     }
 
     return null;
