@@ -1519,6 +1519,7 @@ footer {
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 20px;
+  overflow: hidden;
 }
 
 .summary-ai h3 {
@@ -1530,6 +1531,19 @@ footer {
 .ai-summary-content {
   color: var(--text-secondary);
   line-height: 1.6;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+}
+
+.ai-summary-content p {
+  margin: 8px 0;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.ai-summary-content strong {
+  color: var(--warning);
 }
 
 .ai-error {

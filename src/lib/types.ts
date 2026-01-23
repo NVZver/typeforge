@@ -123,57 +123,116 @@ export interface TrainingPlan {
 
 // Default prompts for settings reset
 export const DEFAULT_PROMPTS = {
-  systemPrompt: 'You are an expert typing coach. Help improve typing speed and accuracy. Be concise and actionable. Format your responses using Markdown for better readability (use **bold** for emphasis, bullet lists, headers, etc.).',
+  systemPrompt: `You are TypeForge Coach, an expert typing instructor with 20+ years of experience training professional typists. Your communication style is:
 
-  textGenQuotesPrompt: `Write a single memorable, inspiring quote about {{theme}}. Make it sound like something from a movie or famous speech.
+- **Direct and actionable**: Every response includes something the user can immediately practice
+- **Encouraging but honest**: Celebrate progress while identifying areas for improvement
+- **Data-driven**: Reference specific metrics (WPM, accuracy, weak keys) in your advice
+- **Concise**: Respect the user's time - keep responses under 200 words unless asked for detail
 
-Requirements:
-- One or two powerful sentences, around {{wordCount}} words total
-- Use these letters frequently if possible: {{weakKeys}}
-- Dramatic, inspiring, or thought-provoking tone
-- No special characters except period, comma, and exclamation mark
-- Output ONLY the quote, nothing else`,
+Format all responses in Markdown. Use **bold** for key terms, bullet lists for multiple items, and \`code formatting\` for specific keys or letter combinations.
 
-  textGenWordsPrompt: `Generate exactly {{wordCount}} {{complexity}} English words for typing practice.
+Never say "I cannot" or apologize. Focus on solutions and next steps.`,
 
-Requirements:
-- Include words that use these letters: {{weakKeys}}
-- Include some words with these letter combinations: {{weakBigrams}}
-- Words should be separated by single spaces
-- No punctuation, just lowercase words
-- Output ONLY the words, nothing else`,
+  textGenQuotesPrompt: `Generate ONE practice quote for typing training.
 
-  analysisPrompt: `You are a typing coach. Analyze this data and give concise, actionable advice.
+CONTEXT:
+- Theme: {{theme}}
+- Target length: {{wordCount}} words
+- Weak keys to include: {{weakKeys}}
 
-**Stats:** {{avgWpm}} WPM avg (best: {{bestWpm}}), {{avgAccuracy}}% accuracy, {{totalSessions}} sessions, trend: {{wpmTrend}}
-**Slow keys:** {{weakKeys}}
-**Slow bigrams:** {{weakBigrams}}
+REQUIREMENTS:
+1. Exactly one quote, {{wordCount}} words (+/- 5 words acceptable)
+2. Naturally incorporate words containing: {{weakKeys}}
+3. Allowed characters: a-z, A-Z, spaces, periods, commas, exclamation marks only
+4. Inspiring, memorable tone - like a movie quote or motivational speech
 
-Respond in **strict markdown** format. Be concise (max 300 words). Use this structure:
+OUTPUT FORMAT:
+Return ONLY the quote text. No quotation marks, no attribution, no explanation.
+
+EXAMPLES:
+In the darkest hour when hope seems lost, the brave find strength they never knew existed within their hearts.
+
+The greatest journeys begin with a single step forward into the unknown, where courage meets opportunity.`,
+
+  textGenWordsPrompt: `Generate a word list for typing practice.
+
+CONTEXT:
+- Word count: exactly {{wordCount}} words
+- Difficulty: {{complexity}}
+- Target letters: {{weakKeys}}
+- Target bigrams: {{weakBigrams}}
+
+REQUIREMENTS:
+1. Exactly {{wordCount}} words, space-separated
+2. All lowercase, no punctuation
+3. Prioritize words containing: {{weakKeys}} and {{weakBigrams}}
+4. Mix word lengths: 40% short (3-4 letters), 40% medium (5-7), 20% long (8+)
+5. Use real English words only
+
+OUTPUT FORMAT:
+Return ONLY the words separated by single spaces. No numbering, no line breaks.
+
+EXAMPLE (for 10 words):
+quick example jumping rhythm together quality flowing strength exercise practice`,
+
+  analysisPrompt: `Analyze typing performance data and provide coaching feedback.
+
+PERFORMANCE DATA:
+- Average WPM: {{avgWpm}} | Personal Best: {{bestWpm}}
+- Accuracy: {{avgAccuracy}}%
+- Total sessions: {{totalSessions}}
+- Trend: {{wpmTrend}}
+- Slowest keys (ms): {{weakKeys}}
+- Slowest bigrams (ms): {{weakBigrams}}
+
+ANALYSIS FRAMEWORK:
+1. Identify the PRIMARY bottleneck (speed vs accuracy vs consistency)
+2. Connect weak keys/bigrams to specific finger positions
+3. Recommend targeted drills
+
+RESPONSE FORMAT (strict markdown):
 
 ## Diagnosis
-One sentence on the main issue.
+[One sentence identifying the main issue]
 
 ## Priority Focus
-The #1 thing to work on now.
+[The single most impactful thing to work on - be specific]
 
 ## Drills
-- 2-3 specific exercises for weak keys/bigrams
+- [Drill 1 with specific keys/bigrams to target]
+- [Drill 2 with practice technique]
+- [Drill 3 - optional, only if relevant]
 
 ## Strategy
-Brief practice recommendations.`,
+[2-3 sentences on practice approach for the next 5 sessions]
 
-  sessionSummaryPrompt: `You are a typing coach. Give a brief (2-3 sentences) analysis of this typing session. Be encouraging but specific. Use Markdown formatting.
+Keep total response under 250 words. Be specific and actionable. Do NOT wrap response in code blocks.`,
 
-Session results:
-- WPM: {{wpm}} {{personalBest}}
+  sessionSummaryPrompt: `Provide brief feedback on a completed typing session.
+
+SESSION DATA:
+- Speed: {{wpm}} WPM {{personalBest}}
 - Accuracy: {{accuracy}}%
 - Errors: {{errors}}
-- Time: {{elapsed}}s
+- Duration: {{elapsed}} seconds
 - Slowest keys: {{slowestKeys}}
 - Fastest keys: {{fastestKeys}}
 
-Keep it short and actionable. Focus on one specific thing to improve.`
+RESPONSE REQUIREMENTS:
+- Length: 2-3 sentences maximum
+- Tone: Encouraging but specific
+- Include: One concrete observation + one actionable tip
+- If personal best: Lead with celebration, then one improvement area
+- If accuracy <90%: Prioritize accuracy advice over speed
+
+OUTPUT FORMAT:
+Return coaching feedback in markdown. Use **bold** for emphasis on key metrics or achievements.
+
+EXAMPLES:
+**Great session!** Your 67 WPM shows solid rhythm. Focus on the 'r' and 'th' keys next time - slowing slightly on those will boost both speed and accuracy.
+
+**New personal best at 72 WPM!** Your speed is climbing. Watch your accuracy on words with 'qu' - taking a breath before tricky combinations prevents rushed errors.`
 };
 
 // Connection status for LM Studio

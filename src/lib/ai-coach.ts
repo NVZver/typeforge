@@ -121,25 +121,38 @@ class AICoachService {
   }
 
   buildPrompt(analysisData: AnalysisData): string {
-    return `You are a typing coach. Analyze this data and give concise, actionable advice.
+    return `Analyze typing performance data and provide coaching feedback.
 
-**Stats:** ${analysisData.summary.avgWpm} WPM avg (best: ${analysisData.summary.bestWpm}), ${analysisData.summary.avgAccuracy}% accuracy, ${analysisData.summary.totalSessions} sessions, trend: ${analysisData.summary.wpmTrend}
-**Slow keys:** ${analysisData.weakKeys.slice(0, 5).map(k => `${k.key}(${k.avgMs}ms)`).join(', ') || 'none yet'}
-**Slow bigrams:** ${analysisData.weakBigrams.slice(0, 5).map(b => `${b.bigram}(${b.avgMs}ms)`).join(', ') || 'none yet'}
+PERFORMANCE DATA:
+- Average WPM: ${analysisData.summary.avgWpm} | Personal Best: ${analysisData.summary.bestWpm}
+- Accuracy: ${analysisData.summary.avgAccuracy}%
+- Total sessions: ${analysisData.summary.totalSessions}
+- Trend: ${analysisData.summary.wpmTrend}
+- Slowest keys: ${analysisData.weakKeys.slice(0, 5).map(k => `${k.key}(${k.avgMs}ms)`).join(', ') || 'none yet'}
+- Slowest bigrams: ${analysisData.weakBigrams.slice(0, 5).map(b => `${b.bigram}(${b.avgMs}ms)`).join(', ') || 'none yet'}
 
-Respond in **strict markdown** format. Be concise (max 300 words). Use this structure:
+ANALYSIS FRAMEWORK:
+1. Identify the PRIMARY bottleneck (speed vs accuracy vs consistency)
+2. Connect weak keys/bigrams to specific finger positions
+3. Recommend targeted drills
+
+RESPONSE FORMAT (strict markdown):
 
 ## Diagnosis
-One sentence on the main issue.
+[One sentence identifying the main issue]
 
 ## Priority Focus
-The #1 thing to work on now.
+[The single most impactful thing to work on - be specific]
 
 ## Drills
-- 2-3 specific exercises for weak keys/bigrams
+- [Drill 1 with specific keys/bigrams to target]
+- [Drill 2 with practice technique]
+- [Drill 3 - optional, only if relevant]
 
 ## Strategy
-Brief practice recommendations.`;
+[2-3 sentences on practice approach for the next 5 sessions]
+
+Keep total response under 250 words. Be specific and actionable.`;
   }
 
   async analyze(): Promise<{ content: string; elapsed: number; model: string } | null> {
@@ -173,10 +186,12 @@ Brief practice recommendations.`;
       }
 
       const data = await response.json();
-      const content = data.choices?.[0]?.message?.content;
+      let content = data.choices?.[0]?.message?.content;
       const elapsed = Number(((Date.now() - startTime) / 1000).toFixed(1));
 
       if (content) {
+        // Clean up any code block wrappers
+        content = this.cleanMarkdownResponse(content);
         this.isConnected = true;
         return { content, elapsed, model: data.model || 'Unknown' };
       }
@@ -205,6 +220,15 @@ Brief practice recommendations.`;
       .replace(/^[^a-zA-Z]+/, '')
       .replace(/[^a-zA-Z.!?]+$/, '')
       .trim();
+  }
+
+  // Clean markdown response - strip code block wrappers if present
+  private cleanMarkdownResponse(text: string): string {
+    let cleaned = text.trim();
+    // Remove code block wrappers (```markdown ... ``` or ``` ... ```)
+    cleaned = cleaned.replace(/^```(?:markdown|md)?\s*\n?/i, '');
+    cleaned = cleaned.replace(/\n?```\s*$/i, '');
+    return cleaned.trim();
   }
 
   async generatePracticeText(): Promise<string | null> {
@@ -244,18 +268,26 @@ Brief practice recommendations.`;
     ];
     const theme = themes[Math.floor(Math.random() * themes.length)];
 
-    const prompt = `Write a single memorable quote or dramatic line about ${theme}. Make it sound like something from a movie, game, or famous speech.
+    const prompt = `Generate ONE practice quote for typing training.
 
-Requirements:
-- One or two powerful sentences, around 40-60 words total
-- Use these letters frequently: ${alphabeticKeys.join(', ')}
-- Dramatic, inspiring, or thought-provoking tone
-- No special characters except period, comma, and exclamation mark
-- Output ONLY the quote, nothing else
+CONTEXT:
+- Theme: ${theme}
+- Target length: 40-60 words
+- Weak keys to include: ${alphabeticKeys.join(', ') || 'common letters'}
 
-Examples of the style wanted:
-- In the darkest hour, when hope seems lost, the brave find strength they never knew they had.
-- The stars whispered secrets of ancient worlds, and those who listened discovered the universe was never silent.`;
+REQUIREMENTS:
+1. Exactly one quote, 40-60 words
+2. Naturally incorporate words containing the weak keys listed above
+3. Allowed characters: a-z, A-Z, spaces, periods, commas, exclamation marks only
+4. Inspiring, memorable tone - like a movie quote or motivational speech
+
+OUTPUT FORMAT:
+Return ONLY the quote text. No quotation marks, no attribution, no explanation.
+
+EXAMPLES:
+In the darkest hour when hope seems lost, the brave find strength they never knew existed within their hearts.
+
+The greatest journeys begin with a single step forward into the unknown, where courage meets opportunity.`;
 
     try {
       const response = await fetch(`${this.endpoint}/chat/completions`, {
@@ -325,9 +357,11 @@ Examples of the style wanted:
       }
 
       const data = await response.json();
-      const content = data.choices?.[0]?.message?.content;
+      let content = data.choices?.[0]?.message?.content;
 
       if (content) {
+        // Clean up any code block wrappers
+        content = this.cleanMarkdownResponse(content);
         this.isConnected = true;
         return content;
       }
@@ -353,33 +387,51 @@ Examples of the style wanted:
 
     if (practiceMode === 'quotes') {
       const lengthGuide = currentDifficulty === 'easy' ? '30-40' : currentDifficulty === 'medium' ? '40-60' : '60-80';
-      prompt = `Write a single memorable, inspiring quote about ${currentTheme}. Make it sound like something from a movie or famous speech.
+      prompt = `Generate ONE practice quote for typing training.
 
-Requirements:
-- One or two powerful sentences, around ${lengthGuide} words total
-- Use these letters frequently if possible: ${alphabeticKeys.join(', ') || 'common letters'}
-- Dramatic, inspiring, or thought-provoking tone
-- No special characters except period, comma, and exclamation mark
-- Output ONLY the quote, nothing else
+CONTEXT:
+- Theme: ${currentTheme}
+- Target length: ${lengthGuide} words
+- Weak keys to include: ${alphabeticKeys.join(', ') || 'common letters'}
 
-Examples of the style wanted:
-- In the darkest hour, when hope seems lost, the brave find strength they never knew they had.
-- The stars whispered secrets of ancient worlds, and those who listened discovered the universe was never silent.`;
+REQUIREMENTS:
+1. Exactly one quote, ${lengthGuide} words (+/- 5 words acceptable)
+2. Naturally incorporate words containing the weak keys listed above
+3. Allowed characters: a-z, A-Z, spaces, periods, commas, exclamation marks only
+4. Inspiring, memorable tone - like a movie quote or motivational speech
+
+OUTPUT FORMAT:
+Return ONLY the quote text. No quotation marks, no attribution, no explanation.
+
+EXAMPLES:
+In the darkest hour when hope seems lost, the brave find strength they never knew existed within their hearts.
+
+The greatest journeys begin with a single step forward into the unknown, where courage meets opportunity.`;
     } else {
       // Words mode - generate word practice
       const wordCount = currentDifficulty === 'easy' ? 25 : currentDifficulty === 'medium' ? 35 : 50;
       const complexity = currentDifficulty === 'easy' ? 'simple, common' : currentDifficulty === 'medium' ? 'moderately common' : 'varied and challenging';
 
-      prompt = `Generate exactly ${wordCount} ${complexity} English words for typing practice.
+      prompt = `Generate a word list for typing practice.
 
-Requirements:
-- Include words that use these letters: ${alphabeticKeys.join(', ') || 'common letters'}
-- Include some words with these letter combinations: ${alphabeticBigrams.join(', ') || 'common combinations'}
-- Words should be separated by single spaces
-- No punctuation, just lowercase words
-- Output ONLY the words, nothing else
+CONTEXT:
+- Word count: exactly ${wordCount} words
+- Difficulty: ${complexity}
+- Target letters: ${alphabeticKeys.join(', ') || 'common letters'}
+- Target bigrams: ${alphabeticBigrams.join(', ') || 'common combinations'}
 
-Example format: the quick brown fox jumps over the lazy dog near the riverbank`;
+REQUIREMENTS:
+1. Exactly ${wordCount} words, space-separated
+2. All lowercase, no punctuation
+3. Prioritize words containing the target letters and bigrams
+4. Mix word lengths: 40% short (3-4 letters), 40% medium (5-7), 20% long (8+)
+5. Use real English words only
+
+OUTPUT FORMAT:
+Return ONLY the words separated by single spaces. No numbering, no line breaks.
+
+EXAMPLE (for 10 words):
+quick example jumping rhythm together quality flowing strength exercise practice`;
     }
 
     try {
@@ -438,17 +490,25 @@ Example format: the quick brown fox jumps over the lazy dog near the riverbank`;
 
     const isNewBest = stats.wpm >= bestWpm && stats.wpm > 0;
 
-    const prompt = `You are a typing coach. Give a brief (2-3 sentences) analysis of this typing session. Be encouraging but specific. Use Markdown formatting.
+    const prompt = `Provide brief feedback on a completed typing session.
 
-Session results:
-- WPM: ${stats.wpm} ${isNewBest ? '(NEW PERSONAL BEST!)' : `(best: ${bestWpm})`}
+SESSION DATA:
+- Speed: ${stats.wpm} WPM ${isNewBest ? '(NEW PERSONAL BEST!)' : `(best: ${bestWpm})`}
 - Accuracy: ${stats.accuracy}%
 - Errors: ${stats.errors}
-- Time: ${stats.elapsed}s
+- Duration: ${stats.elapsed} seconds
 - Slowest keys: ${slowestKeys.join(', ') || 'N/A'}
 - Fastest keys: ${fastestKeys.join(', ') || 'N/A'}
 
-Keep it short and actionable. Focus on one specific thing to improve.`;
+RESPONSE REQUIREMENTS:
+- Length: 2-3 sentences maximum
+- Tone: Encouraging but specific
+- Include: One concrete observation + one actionable tip
+- If personal best: Lead with celebration, then one improvement area
+- If accuracy <90%: Prioritize accuracy advice over speed
+
+OUTPUT FORMAT:
+Return coaching feedback in plain markdown (NOT wrapped in code blocks). Use **bold** for emphasis on key metrics or achievements.`;
 
     try {
       const response = await fetch(`${this.endpoint}/chat/completions`, {
@@ -467,9 +527,11 @@ Keep it short and actionable. Focus on one specific thing to improve.`;
       }
 
       const data = await response.json();
-      const content = data.choices?.[0]?.message?.content?.trim();
+      let content = data.choices?.[0]?.message?.content?.trim();
 
       if (content) {
+        // Clean up any code block wrappers the AI might have added
+        content = this.cleanMarkdownResponse(content);
         this.isConnected = true;
         return content;
       }

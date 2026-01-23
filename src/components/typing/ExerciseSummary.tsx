@@ -89,7 +89,7 @@ export function ExerciseSummary({ stats, keyTimes, bestWpm, onRefresh }: Exercis
           </div>
         ) : aiSummary ? (
           <div className="ai-summary-content markdown-content">
-            <ReactMarkdown skipHtml>{aiSummary}</ReactMarkdown>
+            <ReactMarkdown>{aiSummary}</ReactMarkdown>
           </div>
         ) : (
           <p className="ai-error">Could not generate AI analysis</p>
