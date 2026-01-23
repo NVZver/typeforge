@@ -20,6 +20,12 @@ export function Header() {
           Practice
         </Link>
         <Link
+          href="/coach"
+          className={clsx('nav-link', pathname === '/coach' && 'active')}
+        >
+          Coach
+        </Link>
+        <Link
           href="/settings"
           className={clsx('nav-link', pathname === '/settings' && 'active')}
         >

@@ -5,7 +5,6 @@ import { TextDisplay } from '@/components/typing/TextDisplay';
 import { TypingInput } from '@/components/typing/TypingInput';
 import { ExerciseSummary } from '@/components/typing/ExerciseSummary';
 import { ConnectionStatusBanner } from '@/components/ai/ConnectionStatusBanner';
-import { ChatInterface } from '@/components/chat/ChatInterface';
 import { TypingEngine } from '@/lib/typing-engine';
 import { storage } from '@/lib/storage';
 import { textGenerator } from '@/lib/text-generator';
@@ -228,14 +227,6 @@ export default function TypingPage() {
     setConnected(isConnected);
   }, []);
 
-  const handleGenerateText = useCallback((text: string) => {
-    stopTimer();
-    engineRef.current.reset();
-    engineRef.current.setText(text);
-    setStats({ wpm: 0, accuracy: 100, errors: 0, characters: 0, elapsed: 0, complete: false });
-    setRefreshKey(k => k + 1);
-  }, [stopTimer]);
-
   const handleModeChange = useCallback(async (mode: 'words' | 'quotes') => {
     if (!trainingPlan || trainingPlan.practiceMode === mode) return;
 
@@ -247,11 +238,6 @@ export default function TypingPage() {
       console.error('Failed to change mode:', error);
     }
   }, [trainingPlan, generateText]);
-
-  // Training progress indicator
-  const sessionsUntilUpdate = trainingPlan
-    ? 5 - trainingPlan.sessionsSinceUpdate
-    : 5;
 
   return (
     <main className="ai-coach-main">
@@ -322,11 +308,6 @@ export default function TypingPage() {
           )}
         </div>
       </div>
-
-      <ChatInterface
-        connected={connected}
-        onGenerateText={handleGenerateText}
-      />
     </main>
   );
 }
