@@ -2047,13 +2047,23 @@ footer {
   background: var(--bg-secondary);
 }
 
+.coach-input-area .btn {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
 .coach-input-row {
   display: flex;
+  flex-direction: row;
+  align-items: center;
   gap: 10px;
+  width: 100%;
 }
 
 .coach-input {
-  flex: 1;
+  flex: 1 1 auto;
+  min-width: 0; /* Safari fix */
+  width: 100%;
   padding: 14px 18px;
   background: var(--bg-tertiary);
   border: 1px solid var(--border);
@@ -2061,6 +2071,8 @@ footer {
   color: var(--text-primary);
   font-family: inherit;
   font-size: 0.95rem;
+  -webkit-appearance: none; /* Safari fix */
+  appearance: none;
 }
 
 .coach-input:focus {
@@ -2075,7 +2087,10 @@ footer {
 
 .coach-input-hints {
   display: flex;
+  flex-direction: row;
   justify-content: space-between;
+  align-items: center;
+  width: 100%;
   margin-top: 10px;
   font-size: 0.75rem;
   color: var(--text-muted);
