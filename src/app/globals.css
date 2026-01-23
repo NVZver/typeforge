@@ -1843,6 +1843,7 @@ footer {
   display: flex;
   flex-direction: column;
   height: calc(100vh - 120px);
+  height: calc(100dvh - 120px); /* Safari-friendly dynamic viewport */
   min-height: 500px;
 }
 
@@ -1923,22 +1924,25 @@ footer {
 }
 
 .coach-chat {
-  flex: 1;
+  flex: 1 1 auto;
   display: flex;
   flex-direction: column;
   background: var(--bg-secondary);
   border: 1px solid var(--border);
   border-radius: 12px;
   overflow: hidden;
+  min-height: 0; /* Safari fix for flex children */
 }
 
 .coach-messages {
-  flex: 1;
+  flex: 1 1 auto;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch; /* Safari smooth scrolling */
   padding: 20px;
   display: flex;
   flex-direction: column;
   gap: 16px;
+  min-height: 0; /* Safari fix for nested flex */
 }
 
 .coach-empty {
@@ -2037,6 +2041,7 @@ footer {
 }
 
 .coach-input-area {
+  flex-shrink: 0; /* Prevent input from shrinking in Safari */
   padding: 15px 20px;
   border-top: 1px solid var(--border);
   background: var(--bg-secondary);
