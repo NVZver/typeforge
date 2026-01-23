@@ -114,8 +114,67 @@ export interface TrainingPlan {
   weakBigrams: string[];
   practiceMode: 'words' | 'quotes';
   systemPrompt: string;
+  textGenQuotesPrompt: string | null;
+  textGenWordsPrompt: string | null;
+  analysisPrompt: string | null;
+  sessionSummaryPrompt: string | null;
   lastUpdated: number;
 }
+
+// Default prompts for settings reset
+export const DEFAULT_PROMPTS = {
+  systemPrompt: 'You are an expert typing coach. Help improve typing speed and accuracy. Be concise and actionable. Format your responses using Markdown for better readability (use **bold** for emphasis, bullet lists, headers, etc.).',
+
+  textGenQuotesPrompt: `Write a single memorable, inspiring quote about {{theme}}. Make it sound like something from a movie or famous speech.
+
+Requirements:
+- One or two powerful sentences, around {{wordCount}} words total
+- Use these letters frequently if possible: {{weakKeys}}
+- Dramatic, inspiring, or thought-provoking tone
+- No special characters except period, comma, and exclamation mark
+- Output ONLY the quote, nothing else`,
+
+  textGenWordsPrompt: `Generate exactly {{wordCount}} {{complexity}} English words for typing practice.
+
+Requirements:
+- Include words that use these letters: {{weakKeys}}
+- Include some words with these letter combinations: {{weakBigrams}}
+- Words should be separated by single spaces
+- No punctuation, just lowercase words
+- Output ONLY the words, nothing else`,
+
+  analysisPrompt: `You are a typing coach. Analyze this data and give concise, actionable advice.
+
+**Stats:** {{avgWpm}} WPM avg (best: {{bestWpm}}), {{avgAccuracy}}% accuracy, {{totalSessions}} sessions, trend: {{wpmTrend}}
+**Slow keys:** {{weakKeys}}
+**Slow bigrams:** {{weakBigrams}}
+
+Respond in **strict markdown** format. Be concise (max 300 words). Use this structure:
+
+## Diagnosis
+One sentence on the main issue.
+
+## Priority Focus
+The #1 thing to work on now.
+
+## Drills
+- 2-3 specific exercises for weak keys/bigrams
+
+## Strategy
+Brief practice recommendations.`,
+
+  sessionSummaryPrompt: `You are a typing coach. Give a brief (2-3 sentences) analysis of this typing session. Be encouraging but specific. Use Markdown formatting.
+
+Session results:
+- WPM: {{wpm}} {{personalBest}}
+- Accuracy: {{accuracy}}%
+- Errors: {{errors}}
+- Time: {{elapsed}}s
+- Slowest keys: {{slowestKeys}}
+- Fastest keys: {{fastestKeys}}
+
+Keep it short and actionable. Focus on one specific thing to improve.`
+};
 
 // Connection status for LM Studio
 export interface ConnectionStatus {

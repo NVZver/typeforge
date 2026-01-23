@@ -107,6 +107,23 @@ function initSchema(): void {
   `);
   database.exec(`INSERT OR IGNORE INTO training_plan (id) VALUES (1)`);
 
+  // Add new prompt columns if they don't exist (migration)
+  const columns = database.prepare(`PRAGMA table_info(training_plan)`).all() as { name: string }[];
+  const columnNames = columns.map(c => c.name);
+
+  if (!columnNames.includes('text_gen_quotes_prompt')) {
+    database.exec(`ALTER TABLE training_plan ADD COLUMN text_gen_quotes_prompt TEXT`);
+  }
+  if (!columnNames.includes('text_gen_words_prompt')) {
+    database.exec(`ALTER TABLE training_plan ADD COLUMN text_gen_words_prompt TEXT`);
+  }
+  if (!columnNames.includes('analysis_prompt')) {
+    database.exec(`ALTER TABLE training_plan ADD COLUMN analysis_prompt TEXT`);
+  }
+  if (!columnNames.includes('session_summary_prompt')) {
+    database.exec(`ALTER TABLE training_plan ADD COLUMN session_summary_prompt TEXT`);
+  }
+
   // Migrate existing system prompts to include Markdown instruction
   const OLD_PROMPT = 'You are an expert typing coach. Help improve typing speed and accuracy. Be concise and actionable.';
   const NEW_PROMPT = 'You are an expert typing coach. Help improve typing speed and accuracy. Be concise and actionable. Format your responses using Markdown for better readability (use **bold** for emphasis, bullet lists, headers, etc.).';
@@ -440,6 +457,10 @@ export function getTrainingPlan(): {
   weakBigrams: string[];
   practiceMode: string;
   systemPrompt: string;
+  textGenQuotesPrompt: string | null;
+  textGenWordsPrompt: string | null;
+  analysisPrompt: string | null;
+  sessionSummaryPrompt: string | null;
   lastUpdated: number;
 } {
   const row = getDb().prepare(`
@@ -450,6 +471,10 @@ export function getTrainingPlan(): {
            weak_bigrams as weakBigrams,
            practice_mode as practiceMode,
            system_prompt as systemPrompt,
+           text_gen_quotes_prompt as textGenQuotesPrompt,
+           text_gen_words_prompt as textGenWordsPrompt,
+           analysis_prompt as analysisPrompt,
+           session_summary_prompt as sessionSummaryPrompt,
            last_updated as lastUpdated
     FROM training_plan WHERE id = 1
   `).get() as {
@@ -460,6 +485,10 @@ export function getTrainingPlan(): {
     weakBigrams: string;
     practiceMode: string;
     systemPrompt: string;
+    textGenQuotesPrompt: string | null;
+    textGenWordsPrompt: string | null;
+    analysisPrompt: string | null;
+    sessionSummaryPrompt: string | null;
     lastUpdated: number;
   };
 
@@ -477,12 +506,16 @@ export function updateTrainingPlan(plan: {
   weakKeys?: string[];
   weakBigrams?: string[];
   practiceMode?: string;
-  systemPrompt?: string;
+  systemPrompt?: string | null;
+  textGenQuotesPrompt?: string | null;
+  textGenWordsPrompt?: string | null;
+  analysisPrompt?: string | null;
+  sessionSummaryPrompt?: string | null;
   lastUpdated?: number;
 }): void {
   const database = getDb();
   const updates: string[] = [];
-  const values: (number | string)[] = [];
+  const values: (number | string | null)[] = [];
 
   if (plan.sessionsSinceUpdate !== undefined) {
     updates.push('sessions_since_update = ?');
@@ -508,9 +541,25 @@ export function updateTrainingPlan(plan: {
     updates.push('practice_mode = ?');
     values.push(plan.practiceMode);
   }
-  if (plan.systemPrompt !== undefined) {
+  if ('systemPrompt' in plan) {
     updates.push('system_prompt = ?');
-    values.push(plan.systemPrompt);
+    values.push(plan.systemPrompt ?? null);
+  }
+  if ('textGenQuotesPrompt' in plan) {
+    updates.push('text_gen_quotes_prompt = ?');
+    values.push(plan.textGenQuotesPrompt ?? null);
+  }
+  if ('textGenWordsPrompt' in plan) {
+    updates.push('text_gen_words_prompt = ?');
+    values.push(plan.textGenWordsPrompt ?? null);
+  }
+  if ('analysisPrompt' in plan) {
+    updates.push('analysis_prompt = ?');
+    values.push(plan.analysisPrompt ?? null);
+  }
+  if ('sessionSummaryPrompt' in plan) {
+    updates.push('session_summary_prompt = ?');
+    values.push(plan.sessionSummaryPrompt ?? null);
   }
   if (plan.lastUpdated !== undefined) {
     updates.push('last_updated = ?');

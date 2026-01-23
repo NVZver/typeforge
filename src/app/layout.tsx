@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Notification } from "@/components/ui/Notification";
+import { Header } from "@/components/ui/Header";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -16,6 +17,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <div className="container">
+          <Header />
           {children}
         </div>
         <Notification />
