@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "outDir": "./dist",
+    "declaration": true,
+    "paths": {
+      "@typeforge/types": ["../types/index.ts"],
+      "@typeforge/types/*": ["../types/*"]
+    }
+  },
+  "include": ["src/**/*", "../types/**/*"],
+  "exclude": ["node_modules", "dist", "tests"]
+}

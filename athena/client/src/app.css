@@ -1,0 +1,14 @@
+@import 'tailwindcss';
+
+:root {
+  --color-bg-primary: #0a0a0f;
+  --color-bg-secondary: #12121a;
+  --color-bg-tertiary: #1a1a2e;
+  --color-accent-cyan: #00f0ff;
+  --color-accent-magenta: #ff00aa;
+  --color-accent-gold: #ffd700;
+  --color-text-primary: #e0e0e0;
+  --color-text-secondary: #888;
+  --color-success: #00ff88;
+  --color-error: #ff4444;
+}
