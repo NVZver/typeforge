@@ -2,6 +2,8 @@ import type {
   MessagesResponse,
   HealthResponse,
   SessionDetailResponse,
+  SessionRequest,
+  SessionResponse,
 } from '@typeforge/types';
 
 export async function fetchMessages(params?: {
@@ -41,6 +43,24 @@ export async function fetchSessionDetail(id: number): Promise<SessionDetailRespo
 
   if (!res.ok) {
     throw new Error(`Failed to fetch session: ${res.status}`);
+  }
+
+  return res.json();
+}
+
+/**
+ * Save a typing session with metrics and timing data.
+ * Returns the session ID for linking to coaching feedback.
+ */
+export async function saveSession(data: SessionRequest): Promise<SessionResponse> {
+  const res = await fetch('/api/session', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to save session: ${res.status}`);
   }
 
   return res.json();

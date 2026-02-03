@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import { fetchHealth } from '../lib/api';
   import { getAppState, setConnectionStatus } from '../stores/app.svelte';
 
@@ -17,7 +16,7 @@
     }
   }
 
-  onMount(() => {
+  $effect(() => {
     checkHealth();
     const interval = setInterval(checkHealth, 30000);
     return () => clearInterval(interval);

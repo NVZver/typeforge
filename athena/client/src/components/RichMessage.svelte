@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import type { AppMessage } from '../stores/app.svelte';
   import type { SessionDetailResponse } from '@typeforge/types';
   import { fetchSessionDetail } from '../lib/api';
@@ -18,15 +17,19 @@
 
   const hasSession = $derived(message.session_id !== null && message.session_id !== undefined);
 
-  onMount(async () => {
+  $effect(() => {
     if (hasSession && message.session_id) {
       loading = true;
-      try {
-        sessionData = await fetchSessionDetail(message.session_id);
-      } catch {
-        // Failed to load session, just show plain message
-      }
-      loading = false;
+      fetchSessionDetail(message.session_id)
+        .then((data) => {
+          sessionData = data;
+        })
+        .catch(() => {
+          // Failed to load session, just show plain message
+        })
+        .finally(() => {
+          loading = false;
+        });
     }
   });
 </script>

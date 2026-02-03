@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import type { ActionEvent, ErrorEvent, Message } from '@typeforge/types';
+  import type { ActionEvent, ErrorEvent, Message, SessionData } from '@typeforge/types';
   import { sendChat } from './lib/sse-client';
-  import { fetchMessages } from './lib/api';
+  import { fetchMessages, saveSession } from './lib/api';
+  import type { TypingMetrics, KeyStats } from './lib/typing-engine';
   import {
     getAppState,
     setMessages,
@@ -20,6 +20,7 @@
   import RichMessage from './components/RichMessage.svelte';
   import LoadingDots from './components/LoadingDots.svelte';
   import StreamingMessage from './components/StreamingMessage.svelte';
+  import TypingView from './components/TypingView.svelte';
 
   const appState = getAppState();
 
@@ -34,6 +35,7 @@
   let loadMoreTriggerEl: HTMLDivElement | undefined = $state();
   let isLoadingMore = $state(false);
   let initialLoadDone = $state(false);
+  let initialLoadStarted = $state(false);
 
   const callbacks = {
     onToken(token: string) {
@@ -144,9 +146,79 @@
   }
 
   function handleKeydown(e: KeyboardEvent) {
+    // ESC in chat view is handled here (typing view handles its own ESC via TypingView)
     if (e.key === 'Escape' && appState.currentView === 'typing') {
+      // This is a fallback - TypingView handles its own escape
       exitTypingView();
     }
+  }
+
+  /**
+   * Handle typing session completion.
+   * Saves session to DB, then triggers coaching feedback with sessionId linkage.
+   */
+  async function handleTypingComplete(data: {
+    metrics: TypingMetrics;
+    keyStats: Record<string, KeyStats>;
+    bigramStats: Record<string, KeyStats>;
+    text: string;
+  }) {
+    // Exit typing view first
+    exitTypingView();
+    setIsLoading(true);
+    streaming = '';
+
+    let sessionId: number | undefined;
+
+    // Save session to database
+    try {
+      const response = await saveSession({
+        wpm: data.metrics.wpm,
+        accuracy: data.metrics.accuracy,
+        errors: data.metrics.errors,
+        characters: data.metrics.characters,
+        duration_ms: data.metrics.duration_ms,
+        text: data.text,
+        keyStats: data.keyStats,
+        bigramStats: data.bigramStats,
+      });
+      sessionId = response.id;
+    } catch {
+      // Session save failed - still try to get coaching feedback
+      addMessage({
+        id: getNextClientId(),
+        role: 'assistant',
+        content: 'Failed to save session data, but here\'s your feedback:',
+        session_id: null,
+        timestamp: Date.now(),
+        isError: true,
+      });
+    }
+
+    // Request coaching feedback with session data and sessionId for rich rendering
+    const sessionData: SessionData = {
+      wpm: data.metrics.wpm,
+      accuracy: data.metrics.accuracy,
+      errors: data.metrics.errors,
+      characters: data.metrics.characters,
+      duration_ms: data.metrics.duration_ms,
+      text: data.text,
+    };
+
+    await sendChat(
+      {
+        trigger: 'session_complete',
+        sessionData,
+        sessionId,
+      },
+      callbacks
+    );
+    scrollToBottom();
+  }
+
+  function handleTypingCancel() {
+    // Discard session data and return to chat silently
+    exitTypingView();
   }
 
   // Set up IntersectionObserver for scroll-to-load
@@ -167,13 +239,19 @@
     return () => observer.disconnect();
   });
 
-  onMount(async () => {
-    await loadInitialMessages();
-    // Only send greeting if no existing messages
-    if (appState.messages.length === 0) {
-      await sendGreeting();
-    }
-    scrollToBottom();
+  // Initialize on mount - runs once
+  $effect(() => {
+    if (initialLoadStarted) return;
+    initialLoadStarted = true;
+
+    (async () => {
+      await loadInitialMessages();
+      // Only send greeting if no existing messages
+      if (appState.messages.length === 0) {
+        await sendGreeting();
+      }
+      scrollToBottom();
+    })();
   });
 
   const isInputDisabled = $derived(appState.isLoading || appState.connectionStatus === 'error');
@@ -214,18 +292,9 @@
     <ChatInput onSend={handleSend} disabled={isInputDisabled} />
   </div>
 {:else if appState.currentView === 'typing' && appState.typingText}
-  <div class="fixed inset-0 bg-[var(--color-bg-primary)] flex items-center justify-center p-8">
-    <div class="max-w-3xl w-full">
-      <div class="mb-8 text-center">
-        <p class="text-[var(--color-text-secondary)] text-sm mb-2">Press ESC to exit</p>
-        <h2 class="text-[var(--color-accent-cyan)] text-xl">Type the following:</h2>
-      </div>
-      <div class="bg-[var(--color-bg-secondary)] rounded-lg p-6">
-        <p class="text-xl leading-relaxed font-mono">{appState.typingText}</p>
-      </div>
-      <p class="text-center text-[var(--color-text-secondary)] mt-8 text-sm">
-        Typing view coming in Epic 5...
-      </p>
-    </div>
-  </div>
+  <TypingView
+    text={appState.typingText}
+    onComplete={handleTypingComplete}
+    onCancel={handleTypingCancel}
+  />
 {/if}
